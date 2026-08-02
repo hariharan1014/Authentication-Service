@@ -2,7 +2,7 @@ from sqlalchemy import or_
 from models.user import User
 from utils.security import hash_password,check_password
 from extensions import db
-from flask_jwt_extended import create_access_token
+from flask_jwt_extended import create_access_token,get_jwt_identity
 
 def register_user(data):
     username = data.get('username')
@@ -63,3 +63,20 @@ def login_user(data):
         "message": "Successfully logged in",
         "access_token": access_token
     })
+
+def view_profile():
+    user_id=get_jwt_identity()
+    user=User.query.get(user_id)
+    if not user:
+        return ({
+            "success": False,
+            "message" : "User Not Found"
+        }),404
+    return ({
+        "success": True,
+        "data":{
+        "id" : user.id,
+        "username" : user.username,
+        "email" : user.email
+            }
+    }),200
