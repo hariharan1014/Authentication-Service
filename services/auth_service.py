@@ -57,7 +57,7 @@ def login_user(data):
             "success": False,
             "message" : "Invalid Email or Password"
         })
-    access_token=create_access_token(identity=user_found.id)
+    access_token=create_access_token(identity=str(user_found.id))
     return({
         "success": True,
         "message": "Successfully logged in",
@@ -65,7 +65,7 @@ def login_user(data):
     })
 
 def view_profile():
-    user_id=get_jwt_identity()
+    user_id=int(get_jwt_identity())
     user=User.query.get(user_id)
     if not user:
         return ({
