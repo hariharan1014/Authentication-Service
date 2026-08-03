@@ -150,3 +150,38 @@ def update_user(data):
             "email" : user.email
         }
         }),200
+def change_password(data):
+    current_password=data.get('current_password')
+    new_password=data.get('new_password')
+    if not current_password or not new_password:
+        return ({
+            "success": False,
+            "message": "Both fields are required."
+        }),400
+    user_id=int(get_jwt_identity())
+    user=db.session.get(User,user_id)
+    if not user:
+        return ({
+            "success": False,
+            "message": "User Not Found"
+        }),404
+    verified=check_password(user.password_hash,current_password)
+    if not verified:
+        return ({
+            "success": False,
+            "message": "Current password does not match."
+        }),401
+    if check_password(user.password_hash,new_password):
+        return ({
+            "success": False,
+            "message" :  "New password must be different from the current password."
+        }),400
+    hashed_password=hash_password(new_password)
+    user.password_hash=hashed_password
+    db.session.commit()
+    jti=get_jwt()["jti"]
+    add_token_to_blacklist(jti)
+    return ({
+        "success": True,
+        "message": "Password changed successfully,Please login again."
+    }),200
