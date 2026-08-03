@@ -1,6 +1,6 @@
 from flask import Blueprint,request,jsonify
-from flask_jwt_extended import jwt_required,get_jwt
-from utils.token_blacklist import is_token_blacklisted, add_token_to_blacklist
+from flask_jwt_extended import jwt_required, get_jwt, get_jwt_identity,create_access_token
+from utils.token_blacklist import add_token_to_blacklist
 from utils.validation import validate_registration_data
 from services.auth_service import register_user,login_user,view_profile
 auth_bp = Blueprint('auth',__name__)
@@ -34,3 +34,13 @@ def logout():
     jti = get_jwt()['jti']
     result,status=add_token_to_blacklist(jti)
     return jsonify(result),status
+
+@auth_bp.route('/refresh', methods=["POST"])
+@jwt_required(refresh=True)
+def refresh():
+    user_id=get_jwt_identity()
+    access_token=create_access_token(identity=user_id)
+    return jsonify({
+        "success": True,
+        "access_token": access_token
+    }),200

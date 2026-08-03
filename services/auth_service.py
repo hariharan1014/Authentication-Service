@@ -2,7 +2,8 @@ from sqlalchemy import or_
 from models.user import User
 from utils.security import hash_password,check_password
 from extensions import db
-from flask_jwt_extended import create_access_token,get_jwt_identity
+from flask_jwt_extended import create_access_token, get_jwt_identity, create_refresh_token
+
 
 def register_user(data):
     username = data.get('username')
@@ -58,10 +59,12 @@ def login_user(data):
             "message" : "Invalid Email or Password"
         })
     access_token=create_access_token(identity=str(user_found.id))
+    refresh_token=create_refresh_token(identity=str(user_found.id))
     return({
         "success": True,
         "message": "Successfully logged in",
-        "access_token": access_token
+        "access_token": access_token,
+        "refresh_token": refresh_token
     })
 
 def view_profile():
