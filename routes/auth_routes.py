@@ -2,7 +2,7 @@ from flask import Blueprint,request,jsonify
 from flask_jwt_extended import jwt_required, get_jwt, get_jwt_identity,create_access_token
 from utils.token_blacklist import add_token_to_blacklist
 from utils.validation import validate_registration_data
-from services.auth_service import register_user,login_user,view_profile
+from services.auth_service import register_user,login_user,view_profile,delete_user,update_user
 auth_bp = Blueprint('auth',__name__)
 
 @auth_bp.route('/register',methods=['POST'])
@@ -12,7 +12,7 @@ def register():
     if not result['success']:
         return jsonify(result),400
     result = register_user(data)
-    return jsonify(result),200
+    return jsonify(result),201
 
 @auth_bp.route('/login',methods=['POST'])
 def login():
@@ -44,3 +44,15 @@ def refresh():
         "success": True,
         "access_token": access_token
     }),200
+
+@auth_bp.route('/profile', methods=["DELETE"])
+@jwt_required()
+def delete():
+    result,status=delete_user()
+    return jsonify(result),status
+@auth_bp.route("/profile",methods=["PUT"])
+@jwt_required()
+def update():
+    data=request.get_json()
+    result,status=update_user(data)
+    return jsonify(result),status

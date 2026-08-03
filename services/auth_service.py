@@ -2,7 +2,8 @@ from sqlalchemy import or_
 from models.user import User
 from utils.security import hash_password,check_password
 from extensions import db
-from flask_jwt_extended import create_access_token, get_jwt_identity, create_refresh_token
+from flask_jwt_extended import create_access_token, get_jwt_identity, create_refresh_token,get_jwt
+from utils.token_blacklist import add_token_to_blacklist
 
 
 def register_user(data):
@@ -69,7 +70,7 @@ def login_user(data):
 
 def view_profile():
     user_id=int(get_jwt_identity())
-    user=User.query.get(user_id)
+    user=db.session.query(User,user_id)
     if not user:
         return ({
             "success": False,
@@ -83,3 +84,69 @@ def view_profile():
         "email" : user.email
             }
     }),200
+def delete_user():
+    user_id = int(get_jwt_identity())
+    user=db.session.get(User,user_id)
+    if not user:
+        return ({
+            "success": False,
+            "message": "User Not Found"
+        }), 404
+    jti=get_jwt()["jti"]
+    add_token_to_blacklist(jti)
+    db.session.delete(user)
+    db.session.commit()
+    return ({
+        "success": True,
+        "message": "User deleted successfully"
+    }),200
+def update_user(data):
+    username=data.get('username')
+    email=data.get('email')
+    if not username and not email:
+        return ({
+            "success": False,
+            "message": "No fields provided for update."
+        }),400
+    user_id= int(get_jwt_identity())
+    user=db.session.get(User,user_id)
+    if not user:
+        return ({
+            "success": False,
+            "message": "User Not Found"
+        }),404
+    existing_user=db.session.query(User).filter(
+        User.id!=user_id,
+        or_(
+        User.username == username,
+        User.email == email
+    )).first()
+    if existing_user:
+        if existing_user.username == username:
+            return ({
+                "success": False,
+                "message": "Username already exists"
+            })
+        elif existing_user.email == email:
+            return ({
+                "success": False,
+                "message": "Email already exists"
+            })
+        return ({
+            "success": False,
+            "message": "UnExpected Error."
+        })
+    if username:
+        user.username=username
+    if email:
+        user.email=email
+    db.session.commit()
+    return ({
+        "success": True,
+        "message": "User updated successfully",
+        "data":{
+            "id" : user.id,
+            "username" : user.username,
+            "email" : user.email
+        }
+        }),200
