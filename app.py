@@ -3,12 +3,15 @@ from config import Config
 from extensions import db,bcrypt,jwt
 from routes.auth_routes import auth_bp
 from utils.token_blacklist import is_token_blacklisted
+from flasgger import Swagger
 app=Flask(__name__)
 app.config.from_object(Config)
 
 db.init_app(app)
 bcrypt.init_app(app)
 jwt.init_app(app)
+
+swagger=Swagger(app)
 
 @jwt.token_in_blocklist_loader
 def check_if_token_revoked(jwt_header,jwt_payload):
@@ -32,7 +35,7 @@ def expired_token_callback(jwt_header,jwt_payload):
         "status" : False,
         "message" : "Access token has expired. Please log in again."
     }),401
-@jwt.token_revoked_loader
+@jwt.revoked_token_loader
 def token_revoked_callback(jwt_header,jwt_payload):
     return ({
         "status" : False,

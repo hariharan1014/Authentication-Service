@@ -70,7 +70,7 @@ def login_user(data):
 
 def view_profile():
     user_id=int(get_jwt_identity())
-    user=db.session.query(User,user_id)
+    user=db.session.get(User,user_id)
     if not user:
         return ({
             "success": False,
